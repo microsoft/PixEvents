@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{46E24C6B-8775-4AA9-9FA5-29F35254996F}</ProjectGuid>
+    <ConfigurationType>Application</ConfigurationType>
+    <TargetName>WinPixEventRuntime.test.V2GpuEvents</TargetName>
+    <TestCode>true</TestCode>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);_CONSOLE;USE_PIX;USE_PIX_ON_ALL_ARCHITECTURES;PIX_USE_GPU_MARKERS_V2;</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="ContextTests.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="WinPixEventRuntime.test.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(GoogleTestPath)\googletest_main.vcxproj">
+      <Project>{14629fee-0926-4914-b534-87cd33cbc8ca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\decoder\lib\PixEventDecoder.lib.vcxproj">
+      <Project>{750cf23a-1b4a-4f62-acb7-45fe8b78a7a7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\runtime\lib\WinPixEventRuntime.lib.vcxproj">
+      <Project>{341700af-6368-49cd-be4d-8e8b11017528}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="LegacyBlockFormatData\**" CopyToOutputDirectory="PreserveNewest" Link="WinPixEventRuntimeData\LegacyBlockFormatData\%(RecursiveDir)\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="WinPixEventRuntime.test.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

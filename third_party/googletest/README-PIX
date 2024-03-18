@@ -1,0 +1,5 @@
+This is a copy of googletest v1.8.1: https://github.com/google/googletest/releases/tag/release-1.8.1
+
+The .vcxproj that we use is a custom one that's derived from the projects that are generated if you run cmake.
+
+If you update googletest, then remember to update cgmanifest.json (in the enlistment root directory) accordingly.
