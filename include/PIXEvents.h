@@ -931,6 +931,7 @@ namespace PIXEventsDetail
             *eventDestination = PIXEncodeEventInfo(0, PIXEvent_EndEvent, eventSize, eventMetadata);
             PIXInsertGPUMarkerOnContextForEndEvent(context, PIXEvent_EndEvent, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
 #else
+            (void)destination;
             PIXEndGPUEventOnContext(context);
 #endif
         }
