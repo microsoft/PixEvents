@@ -101,6 +101,8 @@ namespace PixEventDecoder
         UINT32 Length; //how many characters are in the source string, does not include terminating zero.
         UINT32 BytesUsed; //how many bytes are used by the source string, includes string info, start and end alignment, and terminating zero.
         bool IsAnsi; //indicates if the string is char or wchar_t
+        std::unique_ptr<char[]> PatchedStringData; // Used to store a null-terminated string in case the original string was truncated.
+
         union //pointer to the actual beginning of the string in the data block, or pointer to EmptyString constant if string was fully truncated.
         {
             const void* RawData;
@@ -205,24 +207,32 @@ namespace PixEventDecoder
         // at least has a hard assumption that these strings are terminated.
         if (*stringEnd != 0)
         {
-            // If this string isn't null terminated, then stringEnd actually
-            // points to valid data that we shouldn't write over. Instead, we
-            // null terminate the previous character (thus truncating the string
-            // a bit further).
-            //
-            // (Yes: we're modifying a const buffer.)
-            uint8_t const* nullTerminator = stringEnd - characterSize;
-            assert(nullTerminator >= stringBegin);
+            // If this string isn't null terminated, then we need to allocate
+            // space for a null-terminated copy of the string.
+            assert(stringEnd - characterSize >= stringBegin);
 
             if (isAnsi)
-                *const_cast<char*>(reinterpret_cast<char const*>(nullTerminator)) = '\0';
+            {
+                readInfo.PatchedStringData = std::make_unique<char[]>(stringLen + 1); // +1 for null terminator
+                std::copy(stringBegin, stringEnd, readInfo.PatchedStringData.get());
+                readInfo.PatchedStringData[stringLen] = '\0'; // null terminate the string
+                readInfo.RawData = readInfo.PatchedStringData.get();
+            }
             else
-                *const_cast<wchar_t*>(reinterpret_cast<wchar_t const*>(nullTerminator)) = L'\0';
+            {
+                readInfo.PatchedStringData = std::make_unique<char[]>((stringLen + sizeof(wchar_t))); // +sizeof(wchar_t) for null terminator
+                std::copy(stringBegin, stringEnd, readInfo.PatchedStringData.get());
+                *reinterpret_cast<wchar_t*>(readInfo.PatchedStringData.get() + stringLen) = L'\0'; // null terminate the string
+                readInfo.RawData = reinterpret_cast<wchar_t const*>(readInfo.PatchedStringData.get());
+            }
+        }
+        else
+        {
+            readInfo.RawData = stringBegin;
         }
 
         // readInfo.Length is the length of the string _not including_ the null terminator
         readInfo.Length = (stringLen - 1) * characterSize;
-        readInfo.RawData = stringBegin;
         readInfo.IsAnsi = isAnsi;
         readInfo.BytesUsed = r.BytesUsed();
 
@@ -304,7 +314,8 @@ namespace PixEventDecoder
         UINT32 argumentsCount,
         _In_z_ T* formatString,
         const UINT64* source,
-        const UINT64* limit)
+        const UINT64* limit,
+        std::vector<std::unique_ptr<char []>>& scratchBuffers)
     {
         UINT32 bytesUsed = 0;
         UINT32 argumentIndex = 0;
@@ -357,6 +368,7 @@ namespace PixEventDecoder
                         source += argumentStringInfo.BytesUsed / sizeof(UINT64);
                         bytesUsed += argumentStringInfo.BytesUsed;
                         arguments[argumentIndex++] = reinterpret_cast<UINT64>(argumentStringInfo.RawData);
+                        scratchBuffers.emplace_back(std::move(argumentStringInfo.PatchedStringData));
                         break;
                     }
                 }
@@ -474,6 +486,7 @@ namespace PixEventDecoder
         UINT32* pArgumentsCount)
     {
         static auto utf8Locale = _create_locale(LC_ALL, ".UTF8"); // We treat all ANSI strings as UTF8
+        std::vector<std::unique_ptr<char[]>> scratchBuffers;
 
         EventData eventData;
 
@@ -570,7 +583,7 @@ namespace PixEventDecoder
         {
             if (formatStringInfo.IsAnsi)
             {
-                const UINT32 totalBytesUsed = PopulateFormatArguments(pArguments, PIX_MAX_ARGUMENTS, formatStringInfo.AnsiString, source, limit);
+                const UINT32 totalBytesUsed = PopulateFormatArguments(pArguments, PIX_MAX_ARGUMENTS, formatStringInfo.AnsiString, source, limit, scratchBuffers);
                 if (pArgumentsCount != nullptr)
                 {
                     *pArgumentsCount = totalBytesUsed / sizeof(UINT64);
@@ -602,7 +615,7 @@ namespace PixEventDecoder
             }
             else
             {
-                const UINT32 totalBytesUsed = PopulateFormatArguments(pArguments, PIX_MAX_ARGUMENTS, formatStringInfo.UnicodeString, source, limit);
+                const UINT32 totalBytesUsed = PopulateFormatArguments(pArguments, PIX_MAX_ARGUMENTS, formatStringInfo.UnicodeString, source, limit, scratchBuffers);
                 if (pArgumentsCount != nullptr)
                 {
                     *pArgumentsCount = totalBytesUsed / sizeof(UINT64);
