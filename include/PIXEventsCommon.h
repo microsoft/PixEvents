@@ -28,7 +28,9 @@
 #if __has_feature(address_sanitizer)
 #define PIX_ASAN_ENABLED
 #endif
-#elif defined(__SANITIZE_ADDRESS__)
+#endif
+
+#if !defined(PIX_ASAN_ENABLED) && defined(__SANITIZE_ADDRESS__)
 #define PIX_ASAN_ENABLED
 #endif
 
