@@ -918,9 +918,7 @@ namespace PIXEventsDetail
             PIXInsertTimingMarkerOnContextForEndEvent(context, PIXEvent_EndEvent);
         }
         else
-#endif
         {
-#ifdef PIX_USE_GPU_MARKERS_V2
             UINT64 buffer[PIXEventsGraphicsRecordSpaceQwords];
             destination = buffer;
 
@@ -930,11 +928,11 @@ namespace PIXEventsDetail
             const UINT8 eventMetadata = PIX_EVENT_METADATA_NONE;
             *eventDestination = PIXEncodeEventInfo(0, PIXEvent_EndEvent, eventSize, eventMetadata);
             PIXInsertGPUMarkerOnContextForEndEvent(context, PIXEvent_EndEvent, static_cast<void*>(buffer), static_cast<UINT>(reinterpret_cast<BYTE*>(destination) - reinterpret_cast<BYTE*>(buffer)));
-#else
-            (void)destination;
-            PIXEndGPUEventOnContext(context);
-#endif
         }
+#else
+        (void)destination;
+        PIXEndGPUEventOnContext(context);
+#endif
     }
 }
 

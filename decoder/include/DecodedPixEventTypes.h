@@ -11,8 +11,6 @@ enum class PixEventType
     Begin = 0,
     End = 1,
     Marker = 2,
-    BeginUtf8 = 3,
-    MarkerUtf8 = 4
 };
 
 #pragma pack(push, 1)
@@ -24,10 +22,10 @@ struct PixCpuEvent
         PCWSTR Name = nullptr;
         PCSTR NameUtf8;
     };
-    PCWSTR FormatString = nullptr; // TODO MSFT:20105268 - Currently unused
     UINT32 Color = 0;
     PixEventType Type = PixEventType::Begin;
     BOOL HasContext = FALSE;
+    BOOL HasUtf8Name = FALSE;
 };
 #pragma pack(pop)
 

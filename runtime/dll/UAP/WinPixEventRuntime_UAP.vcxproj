@@ -34,10 +34,10 @@
         %(AdditionalIncludeDirectories)
       </AdditionalIncludeDirectories>
       <!-- CompileAsWinRT controls whether or not C++/CX support is enabled.
-           This tripped up in some build environments as we we had a mismatch
-           between vccorlib.lib, platform.winmd and the compiler. Rather than
-           try and fix all of this it's easier to just disable the C++/CX
-           support we don't need or want. -->
+      This tripped up in some build environments as we we had a mismatch
+      between vccorlib.lib, platform.winmd and the compiler. Rather than
+      try and fix all of this it's easier to just disable the C++/CX
+      support we don't need or want. -->
       <CompileAsWinRT>false</CompileAsWinRT>
     </ClCompile>
   </ItemDefinitionGroup>

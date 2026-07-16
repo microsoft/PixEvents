@@ -48,11 +48,11 @@ TEST(PixEventsLegacyTests, BeginEvent_Ansi_MiscVarargs_WideIntoAnsi)
 TEST(PixEventsLegacyTests, BeginEvent_Ansi_UnicodeChars_MiscVarargs)
 {
     UINT64 buffer[PIXEventsGraphicsRecordSpaceQwords];
-    PixEventsLegacy::EncodeBeginEventForContext(buffer, 0u, u8"(づ｡◕‿‿◕｡)づ hello %s %d %f", "world", 4, 4.0f);
+    PixEventsLegacy::EncodeBeginEventForContext(buffer, 0u, reinterpret_cast<char const*>(u8"(づ｡◕‿‿◕｡)づ hello %s %d %f"), "world", 4, 4.0f);
 
     auto nameAndColor = PixEventDecoder::TryDecodePIXBeginEventOrPIXSetMarkerBlob(buffer, &buffer[PIXEventsGraphicsRecordSpaceQwords - 1]);
 
-    static char const* expectedString = u8"(づ｡◕‿‿◕｡)づ hello world 4 4.000000";
+    static char const* expectedString = reinterpret_cast<char const*>(u8"(づ｡◕‿‿◕｡)づ hello world 4 4.000000");
     EXPECT_EQ(expectedString, nameAndColor->Name);
 }
 
@@ -134,7 +134,7 @@ TEST(PixEventsLegacyTests, BeginEvent_Wide_UnicodeChars_MiscVarargs)
 
     auto nameAndColor = PixEventDecoder::TryDecodePIXBeginEventOrPIXSetMarkerBlob(buffer, &buffer[PIXEventsGraphicsRecordSpaceQwords - 1]);
 
-    static char const* expectedString = u8"(づ｡◕‿‿◕｡)づ hello world 4 4.000000";
+    static char const* expectedString = reinterpret_cast<char const*>(u8"(づ｡◕‿‿◕｡)づ hello world 4 4.000000");
     EXPECT_EQ(expectedString, nameAndColor->Name);
 }
 

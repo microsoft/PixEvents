@@ -141,7 +141,7 @@ namespace WinPixEventRuntime::BlockAllocator
     {
         if (block)
         {
-            WinPixEventRuntime::WriteBlock(block->pPIXLimit - (BYTE*)block.get(), block.get());
+            WinPixEventRuntime::WriteBlock(static_cast<uint32_t>(block->pPIXLimit - (BYTE*)block.get()), block.get());
         }
     }
 }

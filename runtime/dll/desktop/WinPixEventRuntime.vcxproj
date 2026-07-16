@@ -10,6 +10,9 @@
       <Project>{341700af-6368-49cd-be4d-8e8b11017528}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="WinPixEventRuntime.def" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemDefinitionGroup>

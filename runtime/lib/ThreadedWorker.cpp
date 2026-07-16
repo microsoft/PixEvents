@@ -22,18 +22,28 @@ namespace WinPixEventRuntime
 
     void ThreadedWorker::Start()
     {
-        // With multiple calling threads trying to Start/Stop/Add it's possible for an existing
-        // worker thread to already be running. If it is we want to have it gracefully finish
-        // execution before we create another one.
+        auto lock = m_srwlock.lock_exclusive();
+
+        // If a worker is already running, gracefully stop it before creating
+        // a new one. We must release the lock for join() since Worker()
+        // acquires the same lock. This mirrors the pattern used by Stop().
         if (m_worker.joinable())
         {
             m_requestStop = true;
             m_cv.notify_all();
+            lock.reset();
+
             m_worker.join();
+
+            lock = m_srwlock.lock_exclusive();
         }
 
-        auto lock = m_srwlock.lock_exclusive();
-        DoStart();
+        // Re-check: between releasing the lock for join() and reacquiring it,
+        // Add() may have already created a new worker via DoStart().
+        if (!m_worker.joinable())
+        {
+            DoStart();
+        }
     }
 
 
@@ -80,19 +90,13 @@ namespace WinPixEventRuntime
         m_pendingBlocks.push_back(std::move(block));
         m_cv.notify_all();
 
-        if (m_requestStop)
+        // If the worker has been stopped and fully joined, restart it so
+        // the block we just added gets processed. Only restart when the
+        // thread is not joinable (i.e. already joined by Stop/Start) to
+        // avoid racing with another thread that is mid-join.
+        if (m_requestStop && !m_worker.joinable())
         {
-            if (m_worker.joinable())
-            {
-                lock.reset();
-                m_worker.join();
-
-                Start();
-            }
-            else
-            {
-                DoStart();
-            }
+            DoStart();
         }
     }
 

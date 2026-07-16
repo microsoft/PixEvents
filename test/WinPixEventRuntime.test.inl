@@ -41,7 +41,7 @@ public:
 
     virtual void Add(WinPixEventRuntime::BlockAllocator::Block block) override
     {
-        WinPixEventRuntime::WriteBlock(block->pPIXLimit - (BYTE*)block.get(), block.get());
+        WinPixEventRuntime::WriteBlock(static_cast<uint32_t>(block->pPIXLimit - (BYTE*)block.get()), block.get());
     }
 
 };

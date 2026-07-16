@@ -1,4 +1,4 @@
-LIBRARY WinPixEventRuntime
+LIBRARY WinPixEventRuntime_OneCore
 
 EXPORTS
 PIXBeginCapture2 PRIVATE

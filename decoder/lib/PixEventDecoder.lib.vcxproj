@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ProjectGuid>{750CF23A-1B4A-4F62-ACB7-45FE8B78A7A7}</ProjectGuid>
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <TargetName>PixEventDecoder.lib</TargetName>
+    <TargetName>PixEventDecoder</TargetName>
     <VersionInfoFileDescription>PixEventDecoder</VersionInfoFileDescription>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

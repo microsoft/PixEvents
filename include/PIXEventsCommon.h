@@ -592,6 +592,57 @@ inline void PIXEndGPUEventOnContext(_In_ ID3D12CommandQueue* commandQueue)
 
 #endif //__d3d12_h__
 
+#if defined(__d3d12video_h__)
+
+// Video command lists aren't ID3D12GraphicsCommandLists, so they need their own overloads.
+
+inline void PIXSetGPUMarkerOnContext(_In_ ID3D12VideoDecodeCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->SetMarker(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXSetGPUMarkerOnContext(_In_ ID3D12VideoProcessCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->SetMarker(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXSetGPUMarkerOnContext(_In_ ID3D12VideoEncodeCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->SetMarker(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXBeginGPUEventOnContext(_In_ ID3D12VideoDecodeCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->BeginEvent(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXBeginGPUEventOnContext(_In_ ID3D12VideoProcessCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->BeginEvent(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXBeginGPUEventOnContext(_In_ ID3D12VideoEncodeCommandList* commandList, _In_reads_bytes_(size) void* data, UINT size)
+{
+    commandList->BeginEvent(D3D12_EVENT_METADATA, data, size);
+}
+
+inline void PIXEndGPUEventOnContext(_In_ ID3D12VideoDecodeCommandList* commandList)
+{
+    commandList->EndEvent();
+}
+
+inline void PIXEndGPUEventOnContext(_In_ ID3D12VideoProcessCommandList* commandList)
+{
+    commandList->EndEvent();
+}
+
+inline void PIXEndGPUEventOnContext(_In_ ID3D12VideoEncodeCommandList* commandList)
+{
+    commandList->EndEvent();
+}
+
+#endif //__d3d12video_h__
+
 template<class T> struct PIXInferScopedEventType { typedef T Type; };
 template<class T> struct PIXInferScopedEventType<const T> { typedef T Type; };
 template<class T> struct PIXInferScopedEventType<T*> { typedef T Type; };

@@ -48,4 +48,11 @@
   <PropertyGroup>
     <BeforeClCompileTargets>$(BeforeClCompileTargets);GenerateEtwHeader</BeforeClCompileTargets>
   </PropertyGroup>
+  <Target Name="BeforeClean">
+    <ItemGroup>
+      <Clean Include="$(XeSharedIntermediatePath)\PixEtw.h" />
+      <Clean Include="$(XeSharedIntermediatePath)\PixEtw.rc" />
+      <Clean Include="$(XeSharedIntermediatePath)\PixEtwTEMP.BIN" />
+    </ItemGroup>
+  </Target>
 </Project>

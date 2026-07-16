@@ -37,6 +37,7 @@
     <ClCompile Include="PixEventsLegacyTests.cpp" />
     <ClCompile Include="PixEventTests.cpp" />
     <ClCompile Include="PixStringBlockCopyTests.cpp" />
+    <ClCompile Include="ThreadedWorkerRaceTest.cpp" />
     <ClCompile Include="WinPixEventRuntime.test.cpp" />
   </ItemGroup>
   <ItemGroup>

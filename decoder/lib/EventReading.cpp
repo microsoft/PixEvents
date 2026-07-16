@@ -30,7 +30,7 @@ namespace PixEventDecoder
         uint64_t const* m_pos;
         uint64_t const* m_end;
 
-        unsigned m_byteIndex;
+        uint32_t m_byteIndex;
     
     public:
         Reader(uint64_t const* begin, uint64_t const* end)
@@ -61,7 +61,7 @@ namespace PixEventDecoder
 
         void SkipBytes(uint64_t bytes)
         {
-            m_byteIndex += bytes;
+            m_byteIndex += static_cast<uint32_t>(bytes);
             while (m_byteIndex >= sizeof(uint64_t))
             {
                 m_pos++;
@@ -87,7 +87,7 @@ namespace PixEventDecoder
             return *reinterpret_cast<T const*>(p);
         }
         
-        uint32_t BytesUsed() const
+        uint64_t BytesUsed() const
         {
             return (m_pos - m_begin) * sizeof(uint64_t) + m_byteIndex;
         }
@@ -183,7 +183,7 @@ namespace PixEventDecoder
 
         if (r.IsAtEnd()) //nothing to read: string is truncated
         {
-            readInfo.BytesUsed = r.BytesUsed();
+            readInfo.BytesUsed = static_cast<UINT32>(r.BytesUsed());
             return readInfo;
         }
 
@@ -221,10 +221,10 @@ namespace PixEventDecoder
         }
 
         // readInfo.Length is the length of the string _not including_ the null terminator
-        readInfo.Length = (stringLen - 1) * characterSize;
+        readInfo.Length = static_cast<UINT32>((stringLen - 1) * characterSize);
         readInfo.RawData = stringBegin;
         readInfo.IsAnsi = isAnsi;
-        readInfo.BytesUsed = r.BytesUsed();
+        readInfo.BytesUsed = static_cast<UINT32>(r.BytesUsed());
 
         assert(readInfo.BytesUsed % sizeof(UINT64) == 0); //has to be an even number of qwords
 
@@ -438,7 +438,7 @@ namespace PixEventDecoder
             if (result != 0)
             {
                 StringCchPrintfW(buffer, bufferLength, InvalidUtf8String.data());
-                eventLength = InvalidUtf8String.size();
+                eventLength = (UINT32)InvalidUtf8String.size();
             }
             else
             {
@@ -548,7 +548,7 @@ namespace PixEventDecoder
                 if (result != 0)
                 {
                     StringCchPrintfW(unicodeBuffer, bufferLength, InvalidUtf8String.data());
-                    eventData.Length = InvalidUtf8String.size();
+                    eventData.Length = (UINT32)InvalidUtf8String.size();
                     return eventData;
                 }
                 else
@@ -592,7 +592,7 @@ namespace PixEventDecoder
                 if (result != 0)
                 {
                     StringCchPrintfW(unicodeBuffer, bufferLength, InvalidUtf8String.data());
-                    eventData.Length = InvalidUtf8String.size();
+                    eventData.Length = (UINT32)InvalidUtf8String.size();
                 }
                 else
                 {

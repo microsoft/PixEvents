@@ -243,6 +243,30 @@ namespace PixImpl
 
         return PixImpl::LoadLibraryExW(output, flags);
     }
+
+    __forceinline HRESULT PIXEndProgrammaticGpuCapture(BOOL discard)
+    {
+        typedef HRESULT(WINAPI* EndProgrammaticGpuCaptureFn)(void);
+        auto gpuFn = (EndProgrammaticGpuCaptureFn)PixImpl::GetGpuCaptureFunctionPtr("EndProgrammaticGpuCapture");
+        if (gpuFn != NULL)
+        {
+            return gpuFn();
+        }
+
+        return HRESULT_FROM_WIN32(ERROR_MOD_NOT_FOUND);
+    }
+
+    __forceinline HRESULT PIXEndProgrammaticTimingCapture(BOOL discard)
+    {
+        typedef HRESULT(WINAPI* EndProgrammaticTimingCaptureFn)(BOOL);
+        auto timingFn = (EndProgrammaticTimingCaptureFn)PixImpl::GetTimingCaptureFunctionPtr("EndProgrammaticTimingCapture");
+        if (timingFn != NULL)
+        {
+            return timingFn(discard);
+        }
+
+        return HRESULT_FROM_WIN32(ERROR_MOD_NOT_FOUND);
+    }
 }
 
 #undef PIXERRORCHECK
@@ -322,24 +346,18 @@ extern "C"  __forceinline HRESULT WINAPI PIXBeginCapture2(DWORD captureFlags, _I
 
 extern "C"  __forceinline HRESULT WINAPI PIXEndCapture(BOOL discard)
 {
+    // Best Practice: The user shouldn't have both WinPixGpuCapturer and WinPixTimingCapturer loaded in the process
     // We can't tell if the user wants to end a GPU Capture or a Timing Capture.
-    // The user shouldn't have both WinPixGpuCapturer and WinPixTimingCapturer loaded in the process though,
-    // so we can just look for one of them and call it.
-    typedef HRESULT(WINAPI* EndProgrammaticGpuCaptureFn)(void);
-    auto gpuFn = (EndProgrammaticGpuCaptureFn)PixImpl::GetGpuCaptureFunctionPtr("EndProgrammaticGpuCapture");
-    if (gpuFn != NULL)
+    // So we try to end the GPU capture first and if it fails, we try to end the Timing capture
+
+    HRESULT hr = PixImpl::PIXEndProgrammaticGpuCapture(discard);
+    if (hr == E_ILLEGAL_METHOD_CALL || 
+        hr == HRESULT_FROM_WIN32(ERROR_MOD_NOT_FOUND))
     {
-        return gpuFn();
+        hr = PixImpl::PIXEndProgrammaticTimingCapture(discard);
     }
 
-    typedef HRESULT(WINAPI* EndProgrammaticTimingCaptureFn)(BOOL);
-    auto timingFn = (EndProgrammaticTimingCaptureFn)PixImpl::GetTimingCaptureFunctionPtr("EndProgrammaticTimingCapture");
-    if (timingFn != NULL)
-    {
-        return timingFn(discard);
-    }
-
-    return HRESULT_FROM_WIN32(GetLastError());
+    return hr;
 }
 
 __forceinline HRESULT WINAPI PIXForceD3D11On12()
@@ -502,6 +520,117 @@ inline void PIXInsertGPUMarkerOnContextForEndEvent(_In_ ID3D12GraphicsCommandLis
 inline void PIXInsertGPUMarkerOnContextForEndEvent(_In_ ID3D12CommandQueue* commandQueue, UINT8, void*, UINT)
 {
     commandQueue->EndEvent();
+}
+
+#endif
+
+#if defined(__d3d12video_h__)
+
+// Video command lists aren't ID3D12GraphicsCommandLists, so they need their own overloads.
+
+inline void PIXInsertTimingMarkerOnContextForBeginEvent(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForBeginEvent(_In_ ID3D12VideoProcessCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForBeginEvent(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForSetMarker(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForSetMarker(_In_ ID3D12VideoProcessCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForSetMarker(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertTimingMarkerOnContextForEndEvent(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8 eventType)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->EndEvent();
+}
+
+inline void PIXInsertTimingMarkerOnContextForEndEvent(_In_ ID3D12VideoProcessCommandList* commandList, UINT8 eventType)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->EndEvent();
+}
+
+inline void PIXInsertTimingMarkerOnContextForEndEvent(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8 eventType)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->EndEvent();
+}
+
+inline void PIXInsertGPUMarkerOnContextForBeginEvent(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForBeginEvent(_In_ ID3D12VideoProcessCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForBeginEvent(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->BeginEvent(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForSetMarker(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForSetMarker(_In_ ID3D12VideoProcessCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForSetMarker(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8 eventType, _In_reads_bytes_(size) void* data, UINT size)
+{
+    UNREFERENCED_PARAMETER(eventType);
+    commandList->SetMarker(WINPIX_EVENT_PIX3BLOB_V2, data, size);
+}
+
+inline void PIXInsertGPUMarkerOnContextForEndEvent(_In_ ID3D12VideoDecodeCommandList* commandList, UINT8, void*, UINT)
+{
+    commandList->EndEvent();
+}
+
+inline void PIXInsertGPUMarkerOnContextForEndEvent(_In_ ID3D12VideoProcessCommandList* commandList, UINT8, void*, UINT)
+{
+    commandList->EndEvent();
+}
+
+inline void PIXInsertGPUMarkerOnContextForEndEvent(_In_ ID3D12VideoEncodeCommandList* commandList, UINT8, void*, UINT)
+{
+    commandList->EndEvent();
 }
 
 #endif

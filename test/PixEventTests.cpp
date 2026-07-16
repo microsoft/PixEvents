@@ -45,7 +45,7 @@ TEST_F(PixEventTests, EncodeDecode_KickTires)
     WinPixEventRuntime::FlushCapture();
 
     ASSERT_EQ(1u, g_blocks.size());
-    auto data = PixEventDecoder::DecodeTimingBlock(true, g_blocks[0].size(), g_blocks[0].data(), [] (uint64_t time) { return time; });
+    auto data = PixEventDecoder::DecodeTimingBlock(true, true, (uint32_t)g_blocks[0].size(), g_blocks[0].data(), [] (uint64_t time) { return time; });
 
     ASSERT_EQ(1u, data.Events.size());
 
@@ -78,12 +78,12 @@ namespace
             m_expected.push_back({ type, color, std::move(name), reinterpret_cast<uint64_t>(context) });
         }
 
-        void Validate()
+        void Validate(bool ignoreEventContexts = true, bool gpuOnlyEvents = true)
         {
             WinPixEventRuntime::FlushCapture();
 
             ASSERT_EQ(1u, g_blocks.size());
-            auto data = PixEventDecoder::DecodeTimingBlock(true, g_blocks[0].size(), g_blocks[0].data(), [](uint64_t time) { return time; });
+            auto data = PixEventDecoder::DecodeTimingBlock(ignoreEventContexts, gpuOnlyEvents, (uint32_t)g_blocks[0].size(), g_blocks[0].data(), [](uint64_t time) { return time; });
 
             ASSERT_EQ(m_expected.size(), data.Events.size());
             ASSERT_EQ(m_expected.size(), data.D3D12Contexts.size());
@@ -164,7 +164,7 @@ TEST_F(PixEventTests, BeginEvent)
     PIXBeginEvent(&f.CommandQueue, PIX_COLOR_INDEX(0), L"hello %s %d %f", L"world", 4, 4.0f);
     f.Expect(PixEventType::Begin, PIX_COLOR_INDEX(0), L"hello world 4 4.000000", &f.CommandQueue);
 
-    f.Validate();
+    f.Validate(false);
 }
 
 TEST_F(PixEventTests, BeginEvent_InvalidUTF8)
@@ -263,11 +263,11 @@ TEST_F(PixEventTests, BeginEvent_UTF8)
     Fixture f;
 
     // UTF8 format string
-    PIXBeginEvent((uint8_t)0u, u8"(づ｡◕‿‿◕｡)づ hello %s %d %f", "world", 4, 4.0f);
+    PIXBeginEvent((uint8_t)0u, reinterpret_cast<char const*>(u8"(づ｡◕‿‿◕｡)づ hello %s %d %f"), "world", 4, 4.0f);
     f.Expect(PixEventType::Begin, (uint8_t)0u, L"(づ｡◕‿‿◕｡)づ hello world 4 4.000000");
 
     // UTF8 in the varargs
-    PIXBeginEvent((uint8_t)0u, "%d %s % s", 1, u8"(づ｡◕‿‿◕｡)づ hello %s %d %f", "world");
+    PIXBeginEvent((uint8_t)0u, "%d %s % s", 1, reinterpret_cast<char const*>(u8"(づ｡◕‿‿◕｡)づ hello %s %d %f"), "world");
     f.Expect(PixEventType::Begin, (uint8_t)0u, L"1 (づ｡◕‿‿◕｡)づ hello %s %d %f world");
 
     f.Validate();
@@ -304,7 +304,7 @@ TEST_F(PixEventTests, SetMarker)
     PIXSetMarker(&f.CommandQueue, PIX_COLOR_INDEX(0), L"hello %s %d %f", L"world", 4, 4.0f);
     f.Expect(PixEventType::Marker, PIX_COLOR_INDEX(0), L"hello world 4 4.000000", &f.CommandQueue);
 
-    f.Validate();
+    f.Validate(false);
 }
 
 TEST_F(PixEventTests, EndEvent)
@@ -317,7 +317,7 @@ TEST_F(PixEventTests, EndEvent)
     PIXEndEvent(&f.CommandQueue);
     f.Expect(PixEventType::End, PIX_COLOR_DEFAULT, L"", &f.CommandQueue);
 
-    f.Validate();
+    f.Validate(false);
 }
 
 TEST_F(PixEventTests, EventFormatting)
@@ -333,7 +333,7 @@ TEST_F(PixEventTests, EventFormatting)
 
     PIXSetMarker(PIX_COLOR_DEFAULT, L"hello marker from the future: %d", 42);
     UINT64* limit = threadInfo->destination;
-    *destination++ = PIXEncodeEventInfo(PIXGetTimestampCounter(), static_cast<PIXEventType>(31), (limit - destination), PIX_EVENT_METADATA_NONE);
+    *destination++ = PIXEncodeEventInfo(PIXGetTimestampCounter(), static_cast<PIXEventType>(31), static_cast<UINT8>(limit - destination), PIX_EVENT_METADATA_NONE);
 
     // Index vs non-indexed colors
     PIXSetMarker(PIX_COLOR(64, 128, 192), "hello RGB");
@@ -450,7 +450,7 @@ TEST_F(PixEventTests, TruncatedEventNames)
 
     for (auto& block : g_blocks)
     {
-        auto data = PixEventDecoder::DecodeTimingBlock(true, block.size(), block.data(), [] (uint64_t time) { return time; });
+        auto data = PixEventDecoder::DecodeTimingBlock(true, true, (uint32_t)block.size(), block.data(), [] (uint64_t time) { return time; });
         for (auto const& event : data.Events)
         {
             PixEventType expectedEvent;
@@ -497,7 +497,7 @@ TEST_F(PixEventTests, TruncatedFormattedStrings)
 
     for (auto& block : g_blocks)
     {
-        auto data = PixEventDecoder::DecodeTimingBlock(true, block.size(), block.data(), [] (uint64_t time) { return time; });
+        auto data = PixEventDecoder::DecodeTimingBlock(true, true, (uint32_t)block.size(), block.data(), [] (uint64_t time) { return time; });
         for (auto const& event : data.Events)
         {
             PixEventType expectedEvent;

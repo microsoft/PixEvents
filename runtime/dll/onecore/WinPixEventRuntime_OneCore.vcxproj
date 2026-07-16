@@ -10,11 +10,14 @@
       <Project>{341700af-6368-49cd-be4d-8e8b11017528}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="WinPixEventRuntime_OneCore.def" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ItemDefinitionGroup>
     <Link>
-      <ModuleDefinitionFile>WinPixEventRuntime.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>WinPixEventRuntime_OneCore.def</ModuleDefinitionFile>
     </Link>
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>

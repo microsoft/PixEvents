@@ -29,9 +29,9 @@ public:
         m_expected.push_back({ type, color, std::move(name), reinterpret_cast<uint64_t>(context) });
     }
 
-    void Validate(std::vector<byte>& block)
+    void Validate(std::vector<byte>& block, bool ignoreEventContexts = true, bool gpuOnlyEvents = true)
     {
-        auto data = PixEventDecoder::DecodeTimingBlock(true, block.size(), block.data(), [](uint64_t time) { return time; });
+        auto data = PixEventDecoder::DecodeTimingBlock(ignoreEventContexts, gpuOnlyEvents, (uint32_t)block.size(), block.data(), [](uint64_t time) { return time; });
 
         ASSERT_EQ(m_expected.size(), data.Events.size());
         ASSERT_EQ(m_expected.size(), data.D3D12Contexts.size());
@@ -79,7 +79,7 @@ TEST_F(DecodeTimingBlock_LegacyBlockFormat, BeginEvent)
     Expect(PixEventType::Begin, 7, L"hello world 3 3.000000", expectedContext);
     Expect(PixEventType::Begin, 8, L"hello world 4 4.000000", expectedContext);
 
-    Validate(block);
+    Validate(block, false);
 }
 
 TEST_F(DecodeTimingBlock_LegacyBlockFormat, SetMarker)
@@ -111,7 +111,7 @@ TEST_F(DecodeTimingBlock_LegacyBlockFormat, SetMarker)
     Expect(PixEventType::Marker, 7, L"hello world 3 3.000000", expectedContext);
     Expect(PixEventType::Marker, 8, L"hello world 4 4.000000", expectedContext);
 
-    Validate(block);
+    Validate(block, false);
 }
 
 TEST_F(DecodeTimingBlock_LegacyBlockFormat, EndEvent)
@@ -131,7 +131,7 @@ TEST_F(DecodeTimingBlock_LegacyBlockFormat, EndEvent)
     Expect(PixEventType::End, 0, L"");
     Expect(PixEventType::End, 0, L"", expectedContext);
 
-    Validate(block);
+    Validate(block, false);
 }
 
 TEST_F(DecodeTimingBlock_LegacyBlockFormat, TruncatedEventNames)
@@ -157,7 +157,7 @@ TEST_F(DecodeTimingBlock_LegacyBlockFormat, TruncatedEventNames)
 
     uint32_t expectedNext = 0;
 
-    auto data = PixEventDecoder::DecodeTimingBlock(true, block.size(), block.data(), [] (uint64_t time) { return time; });
+    auto data = PixEventDecoder::DecodeTimingBlock(true, true, (uint32_t)block.size(), block.data(), [] (uint64_t time) { return time; });
     for (auto const& event : data.Events)
     {
         PixEventType expectedEvent;
@@ -209,7 +209,7 @@ TEST_F(DecodeTimingBlock_LegacyBlockFormat, TruncatedFormattedStrings)
     uint32_t expectedNext = 0;
     bool sawTruncated = false;
 
-    auto data = PixEventDecoder::DecodeTimingBlock(true, block.size(), block.data(), [](uint64_t time) { return time; });
+    auto data = PixEventDecoder::DecodeTimingBlock(true, true, (uint32_t)block.size(), block.data(), [](uint64_t time) { return time; });
     for (auto const& event : data.Events)
     {
         PixEventType expectedEvent;

@@ -10,6 +10,7 @@
 #include "Worker.h"
 
 #include <d3d12.h> // must be before pix3.h
+#include <d3d12video.h> // must be before pix3.h
 #include <pix3.h>
 
 #include <wil/resource.h>
@@ -232,4 +233,67 @@ void WINAPI PIXSetMarkerOnCommandList(ID3D12GraphicsCommandList* commandList, UI
 void WINAPI PIXSetMarkerOnCommandQueue(ID3D12CommandQueue* commandQueue, UINT64 color, _In_ PCSTR formatString)
 {
     PIXSetMarker(commandQueue, color, formatString);
+}
+
+// Exported entry points for apps that GetProcAddress these instead of including pix3.h.
+
+void WINAPI PIXEndEventOnVideoDecodeCommandList(ID3D12VideoDecodeCommandList* commandList)
+{
+    PIXEndEvent(commandList);
+}
+
+void WINAPI PIXBeginEventOnVideoDecodeCommandList(ID3D12VideoDecodeCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXBeginEvent(commandList, color, formatString);
+}
+
+void WINAPI PIXSetMarkerOnVideoDecodeCommandList(ID3D12VideoDecodeCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXSetMarker(commandList, color, formatString);
+}
+
+void WINAPI PIXEndEventOnVideoProcessCommandList(ID3D12VideoProcessCommandList* commandList)
+{
+    PIXEndEvent(commandList);
+}
+
+void WINAPI PIXBeginEventOnVideoProcessCommandList(ID3D12VideoProcessCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXBeginEvent(commandList, color, formatString);
+}
+
+void WINAPI PIXSetMarkerOnVideoProcessCommandList(ID3D12VideoProcessCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXSetMarker(commandList, color, formatString);
+}
+
+void WINAPI PIXEndEventOnVideoEncodeCommandList(ID3D12VideoEncodeCommandList* commandList)
+{
+    PIXEndEvent(commandList);
+}
+
+void WINAPI PIXBeginEventOnVideoEncodeCommandList(ID3D12VideoEncodeCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXBeginEvent(commandList, color, formatString);
+}
+
+void WINAPI PIXSetMarkerOnVideoEncodeCommandList(ID3D12VideoEncodeCommandList* commandList, UINT64 color, _In_ PCSTR formatString)
+{
+    PIXSetMarker(commandList, color, formatString);
+}
+
+
+void WINAPI PIXBeginEventOnThread(UINT32 color, PCSTR name)
+{
+    PIXBeginEvent(color, name);
+}
+
+void WINAPI PIXEndEventOnThread()
+{
+    PIXEndEvent();
+}
+
+void WINAPI PIXSetMarkerOnThread(UINT32 color, PCSTR name)
+{
+    PIXSetMarker(color, name);
 }

@@ -10,7 +10,7 @@
 
 namespace PixEventDecoder
 {
-    DecodedPixEventBlock DecodeTimingBlock(bool ignoreEventContexts, uint32_t bufferSize, uint8_t* buffer, ConvertClockToNanoseconds const& convertClockToNanoseconds)
+    DecodedPixEventBlock DecodeTimingBlock(bool ignoreEventContexts, bool gpuOnlyEvents, uint32_t bufferSize, uint8_t* buffer, ConvertClockToNanoseconds const& convertClockToNanoseconds)
     {
         DecodedPixEventBlock decodedData;
 
@@ -37,17 +37,41 @@ namespace PixEventDecoder
                 isFirstEventInBlock = false;
             }
 
-            decodedData.Events.push_back({
-                (INT64)timingEvt.cpuEvent.timestamp,
-                nullptr, // null name until all events are added
-                nullptr, // null FormatString for now (MSFT:20105268)
-                timingEvt.cpuEvent.color,
-                timingEvt.cpuEvent.type,
-                ignoreEventContexts ? FALSE : timingEvt.bContextEvent, // HasContext
-                });
+            // Gpu events are now linked with Cpu markers
+            // So now we should add these Cpu markers only if Gpu timings are enabled
+            if (!timingEvt.bContextEvent || !ignoreEventContexts)
+            {
+                decodedData.Events.push_back({
+                    (INT64)timingEvt.cpuEvent.timestamp,
+                    nullptr, // null name until all events are added
+                    timingEvt.cpuEvent.color,
+                    timingEvt.cpuEvent.type,
+                    ignoreEventContexts ? FALSE : timingEvt.bContextEvent, // HasContext
+                    });
 
-            decodedData.Names.push_back(name ? name : L"");
-            decodedData.D3D12Contexts.push_back(timingEvt.bContextEvent ? timingEvt.pObject : 0);
+                decodedData.Names.push_back((name != nullptr) ? name : L"");
+                decodedData.D3D12Contexts.push_back(timingEvt.bContextEvent ? timingEvt.pObject : 0);
+
+                if (!gpuOnlyEvents &&
+                    timingEvt.bContextEvent && (timingEvt.cpuEvent.type != PixEventType::Marker))
+                {
+                    // For Gpu events, add an additional Cpu event
+                    // This almost restores the old functionality of linking Gpu events with Cpu events for well-behaved titles
+                    TimingMarkerEvent cpuTimingEvt = timingEvt;
+                    cpuTimingEvt.bContextEvent = false;
+
+                    decodedData.Events.push_back({
+                        (INT64)cpuTimingEvt.cpuEvent.timestamp,
+                        nullptr, // null name until all events are added
+                        cpuTimingEvt.cpuEvent.color,
+                        cpuTimingEvt.cpuEvent.type,
+                        FALSE, // HasContext
+                        });
+
+                    decodedData.Names.push_back((name != nullptr) ? name : L"");
+                    decodedData.D3D12Contexts.push_back(0);
+                }
+            }
         });
 
         // Re-assign event names now that decodedNameBuffer is done being built
@@ -104,7 +128,7 @@ namespace PixEventDecoder
             output.Name = std::string();
         }
 
-        output.Color = eventData.Metadata;
+        output.Color = static_cast<UINT32>(eventData.Metadata);
 
         return output;
     }
